@@ -1,0 +1,69 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Shopper {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  phone     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  orders          Order[]
+  communications  Communication[]
+}
+
+model Order {
+  id        String   @id @default(uuid())
+  shopperId String
+  amount    Float
+  status    String   // e.g. COMPLETED, CANCELLED
+  createdAt DateTime @default(now())
+
+  shopper   Shopper  @relation(fields: [shopperId], references: [id])
+}
+
+model Segment {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  queryRules  String   // JSON string containing segment conditions
+  createdAt   DateTime @default(now())
+
+  campaigns   Campaign[]
+}
+
+model Campaign {
+  id        String   @id @default(uuid())
+  name      String
+  segmentId String
+  message   String
+  channel   String   // WHATSAPP, SMS, EMAIL
+  status    String   @default("DRAFT") // DRAFT, SENDING, COMPLETED
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  segment         Segment          @relation(fields: [segmentId], references: [id])
+  communications  Communication[]
+}
+
+model Communication {
+  id         String   @id @default(uuid())
+  campaignId String
+  shopperId  String
+  channel    String
+  message    String
+  status     String   @default("PENDING") // PENDING, SENT, DELIVERED, FAILED, OPENED, CLICKED
+  externalId String?  // ID returned by the mock channel service
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  campaign Campaign @relation(fields: [campaignId], references: [id])
+  shopper  Shopper  @relation(fields: [shopperId], references: [id])
+}
